@@ -1,6 +1,6 @@
 # ros2_navigation_utils
 
-A collection of ROS2 utilities for mobile robot's navigation
+A collection of ROS2 utilities for mobile robot's planar navigation
 
 ## Follow path action server
 
