@@ -1,0 +1,22 @@
+# The path to follow.
+nav_msgs/Path path
+# The desired linear speed at which to follow the path
+float32 speed
+# The desired angular_speed speed at which to follow the path
+# If set to zero => ignore the angular components 
+float32 angular_speed
+# How near to the goal to arrive
+float32 spatial_goal_tolerance
+float32 angular_goal_tolerance
+# Whether align with the path curve orientation
+# effectively ignoring the orientation of the path poses
+bool turn_ahead
+# Which interpolation kind to apply to the path orientation
+# see https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.interp1d.html
+string orientation_interpolation "previous"
+---
+# Result
+bool success
+---
+# Feedback
+float32 time_to_arrive
