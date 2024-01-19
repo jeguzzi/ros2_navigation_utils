@@ -1,10 +1,10 @@
 # ros2_navigation_utils
 
-A collection of node useful for mobile robot's navigation
+A collection of nodes useful for mobile robot's navigation
 
 ## Follow path action server
 
-An action server to actuate a path, like a carrot-planner. Very simple. Ignore possible collisions.
+An action server to actuate a path, like a carrot-planner. It is very simple and ignores possible collisions.
 
 It has few parameters:
 
@@ -14,7 +14,7 @@ It has few parameters:
 
 The action goal has the following fields:
 
-- `path`: the path to follow. Should be in a TF-frame connected to `frame_id`
+- `path`: the path to follow. Should be in a TF frame connected to `frame_id`
 - `speed`: the desired linear speed at which to follow the path
 - `angular_speed`: the desired angular_speed speed at which to follow the path. If set to zero, the controller ignores angular motions. 
 - `spatial_goal_tolerance` and `angular_goal_tolerance`: how near to the goal to arrive
