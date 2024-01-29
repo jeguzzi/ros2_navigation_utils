@@ -1,0 +1,30 @@
+<launch>
+
+
+ <!-- The namespace -->
+  <arg name="name" default="RM0001"/>
+  <!-- How much to look ahead of the current pose -->
+  <arg name="horizon" default="0.1"/>
+  <!-- The relaxation time to converge/track to the path -->
+  <arg name="tau" default="0.5"/>
+  <!-- In which frame to perform the control. 
+  Should be connected to the frame of the path to follow. Include the tf prefix! -->
+  <arg name="frame_id" default="odom"/>
+
+  <push-ros-namespace namespace="$(var name)"/>
+
+  <node name="follow_path_server" pkg="navigation_utils" exec="follow_path_server" output="screen">
+    <param name="horizon" value="$(var horizon)"/>
+    <param name="tau" value="$(var tau)"/>
+    <param name="frame_id" value="$(var frame_id)"/>
+  </node>
+
+<node pkg="navigation_utils" exec="A2BNavigationNode" name="A2BNavigationNode" output="screen">
+ <param name="robotName" value="$(var name)"/>
+  <param name="mapPath" value="/ros_ws/data/env1.yaml"/> 
+  <param name="startPoint" value="0.0, 0.0, 0.0"/> 
+    <param name="endPoint" value="10.0, 0.0, 0.0"/> 
+</node>
+
+
+</launch>
