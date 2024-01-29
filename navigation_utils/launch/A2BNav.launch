@@ -9,7 +9,9 @@
   <arg name="tau" default="0.5"/>
   <!-- In which frame to perform the control. 
   Should be connected to the frame of the path to follow. Include the tf prefix! -->
-  <arg name="frame_id" default="odom"/>
+   <arg name="frame_id" default="odom"/>
+
+  <arg name="mapPath" default="/home/nickybones/Code/ros2_ws/data/env1.yaml"/>
 
   <push-ros-namespace namespace="$(var name)"/>
 
@@ -21,9 +23,9 @@
 
 <node pkg="navigation_utils" exec="A2BNavigationNode" name="A2BNavigationNode" output="screen">
  <param name="robotName" value="$(var name)"/>
-  <param name="mapPath" value="/ros_ws/data/env1.yaml"/> 
-  <param name="startPoint" value="0.0, 0.0, 0.0"/> 
-    <param name="endPoint" value="10.0, 0.0, 0.0"/> 
+  <param name="mapPath" value="$(var mapPath)"/> 
+  <param name="startPoint" value="0.0,0.0,0.0" value-sep=","/> 
+    <param name="endPoint" value="10.0,0.0,0.0" value-sep=","/> 
 </node>
 
 

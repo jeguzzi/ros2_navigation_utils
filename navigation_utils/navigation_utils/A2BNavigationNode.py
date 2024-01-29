@@ -11,14 +11,15 @@ from robomaster_msgs.action import Move
 from nav_msgs.msg import Path
 import navigation_msgs.action
 
-from gridmap import OccupancyGridMap
+from .gridmap import OccupancyGridMap
 import matplotlib.pyplot as plt
-from a_star import a_star, plot_path
-from GMAP import GMAP
+from .a_star import a_star, plot_path
+from .GMAP import GMAP
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
 import copy
+from typing import Any, Optional
 
 
 class A2BNavigationNode(Node):
@@ -34,11 +35,11 @@ class A2BNavigationNode(Node):
         robotName = self.get_parameter('robotName').value
         self.get_logger().info("robotName: %s" % (str(robotName),))
 
-        self.declare_parameter('startPoint', [])
+        self.declare_parameter('startPoint', [0.0, 0.0, 0.0])
         startPoint = self.get_parameter('startPoint').value
         self.get_logger().info("startPoint: %s" % (str(startPoint),))
 
-        self.declare_parameter('endPoint', [])
+        self.declare_parameter('endPoint', [0.0, 0.0, 0.0])
         endPoint = self.get_parameter('endPoint').value
         self.get_logger().info("endPoint: %s" % (str(endPoint),))
 
@@ -49,7 +50,16 @@ class A2BNavigationNode(Node):
         bin_map[bin_map < 1.0] = 0.0
         self.occ_map = OccupancyGridMap(bin_map, 1.0)
 
-        self.follow_client = ActionClient(self, navigation_msgs.action.FollowPath, "/{}/follow_path".format(robotName))
+
+        start_node = self.gmap.world2map([startPoint[0], startPoint[1]])
+        goal_node = self.gmap.world2map([endPoint[0], endPoint[1]])
+
+        # run A*
+        path, path_px = a_star(start_node, goal_node, self.occ_map, movement='8N')
+        self.waypoints = self.create_way_points(path)
+
+        self.follow_client = ActionClient(self, navigation_msgs.action.FollowPath, "{}/follow_path".format(robotName))
+        #self.follow_client = ActionClient(self, navigation_msgs.action.FollowPath, "follow_path")
         self.goal_msg = navigation_msgs.action.FollowPath.Goal()
         self.goal_msg.speed = 0.5
         self.goal_msg.angular_speed = 1.0
@@ -57,15 +67,6 @@ class A2BNavigationNode(Node):
         self.goal_msg.spatial_goal_tolerance = 0.1
         self.goal_msg.path.header.frame_id = 'odom'
         self.goal_msg.turn_ahead = True
-
-
-        start_node = self.gmap.world2map([startPoint[0], startPoint[1]])
-        goal_node = self.gmap.world2map([endPoint[0], endPoint[1]])
-
-
-        # run A*
-        path, path_px = a_star(start_node, goal_node, self.occ_map, movement='8N')
-        self.way_points = self.create_way_points(path)
 
         
 
@@ -85,7 +86,7 @@ class A2BNavigationNode(Node):
                 wp = self.gmap.map2world(np.array([path[idx][0], path[idx][1]]))
                 way_points.append(wp)
                 curr_move = move
-                self.get_logger().info(f'move {move}') 
+                #self.get_logger().info(f'move {move}') 
             idx += 1
 
         wp = self.gmap.map2world(np.array([path[node_num - 1][0], path[node_num - 1][1]]))
@@ -110,12 +111,13 @@ class A2BNavigationNode(Node):
         direction = 1
         while True:
             self.goal_msg.path.poses.clear()
-            for x, y in self.waypoints[::direction]:
-                p = geometry_msgs.msg.PoseStamped()
+            for x, y in self.waypoints:
+                p = PoseStamped()
                 p.pose.position.x = x
                 p.pose.position.y = y
                 #p.pose.orientation.z = math.sin(theta / 2)                
                 #p.pose.orientation.w = math.cos(theta / 2)
+                #self.get_logger().error("waypoint {} {}".format(x, y))
                 self.goal_msg.path.poses.append(p)
             goal_handle = await self.follow_client.send_goal_async(
                 self.goal_msg, feedback_callback=self.feedback_callback)
