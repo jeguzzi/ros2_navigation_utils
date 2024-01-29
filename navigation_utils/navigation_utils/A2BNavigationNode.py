@@ -7,7 +7,7 @@ from rclpy.action import ActionClient
 from action_msgs.msg import GoalStatus
 from geometry_msgs.msg import PoseStamped
 from robomaster_msgs.action import Move
-
+import action_msgs.msg
 from nav_msgs.msg import Path
 import navigation_msgs.action
 
@@ -35,6 +35,10 @@ class A2BNavigationNode(Node):
         robotName = self.get_parameter('robotName').value
         self.get_logger().info("robotName: %s" % (str(robotName),))
 
+        self.declare_parameter('frame_id', 'odom')
+        frame_id = self.get_parameter('frame_id').value
+        self.get_logger().info("frame_id: %s" % (str(frame_id),))
+
         self.declare_parameter('startPoint', [0.0, 0.0, 0.0])
         startPoint = self.get_parameter('startPoint').value
         self.get_logger().info("startPoint: %s" % (str(startPoint),))
@@ -58,14 +62,14 @@ class A2BNavigationNode(Node):
         path, path_px = a_star(start_node, goal_node, self.occ_map, movement='8N')
         self.waypoints = self.create_way_points(path)
 
-        self.follow_client = ActionClient(self, navigation_msgs.action.FollowPath, "{}/follow_path".format(robotName))
-        #self.follow_client = ActionClient(self, navigation_msgs.action.FollowPath, "follow_path")
+        #self.follow_client = ActionClient(self, navigation_msgs.action.FollowPath, "{}/follow_path".format(robotName))
+        self.follow_client = ActionClient(self, navigation_msgs.action.FollowPath, "follow_path")
         self.goal_msg = navigation_msgs.action.FollowPath.Goal()
         self.goal_msg.speed = 0.5
         self.goal_msg.angular_speed = 1.0
         self.goal_msg.angular_goal_tolerance = 0.1
         self.goal_msg.spatial_goal_tolerance = 0.1
-        self.goal_msg.path.header.frame_id = 'odom'
+        self.goal_msg.path.header.frame_id = frame_id
         self.goal_msg.turn_ahead = True
 
         
