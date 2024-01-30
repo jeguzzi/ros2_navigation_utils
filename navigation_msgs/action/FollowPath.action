@@ -8,10 +8,10 @@ float32 angular_speed
 # How near to the goal to arrive
 float32 spatial_goal_tolerance
 float32 angular_goal_tolerance
-# Whether align with the path curve orientation
+# Whether to align with the path curve orientation,
 # effectively ignoring the orientation of the path poses
 bool turn_ahead
-# Which interpolation kind to apply to the path orientation
+# Which interpolation kind to apply to the path orientation,
 # see https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.interp1d.html
 string orientation_interpolation "previous"
 ---
