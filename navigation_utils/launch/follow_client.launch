@@ -1,0 +1,13 @@
+<launch>
+
+  <!-- The namespace -->
+  <arg name="name" default=""/>
+  <arg name="frame_id" default="odom"/>
+
+  <push-ros-namespace namespace="$(var name)"/>
+
+  <node name="follow_path_client" pkg="navigation_utils" exec="test_client" output="screen">
+    <param name="frame_id" value="$(var frame_id)"/>
+  </node>
+
+</launch>

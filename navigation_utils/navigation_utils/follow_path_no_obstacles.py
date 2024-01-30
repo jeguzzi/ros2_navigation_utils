@@ -6,6 +6,8 @@ import nav_msgs.msg
 import navigation_msgs.action
 import rclpy
 import rclpy.action
+import rclpy.callback_groups
+import rclpy.executors
 import rclpy.node
 import rclpy.task
 
@@ -21,11 +23,23 @@ class Controller(rclpy.node.Node):  # type: ignore
         self.frame_id = self.declare_parameter('frame_id', 'odom').value
         self.tau = self.declare_parameter('tau', 0.5).value
         self.horizon = self.declare_parameter('horizon', 0.1).value
+        self.multithreaded = self.declare_parameter('multithreaded',
+                                                    False).value
+        self.get_logger().info(
+            "Started FollowPath server with "
+            f"frame_id {self.frame_id}, tau {self.tau}, "
+            f"horizon {self.horizon}, multithreaded {self.multithreaded}")
+
         self.tf = TF(self)
         self.cmd_vel_pub = self.create_publisher(geometry_msgs.msg.Twist,
                                                  'cmd_vel', 10)
-        self.create_subscription(nav_msgs.msg.Odometry, 'odom',
-                                 self.has_received_odom, 1)
+        self.create_subscription(
+            nav_msgs.msg.Odometry,
+            'odom',
+            self.has_received_odom,
+            1,
+            callback_group=rclpy.callback_groups.
+            MutuallyExclusiveCallbackGroup() if self.multithreaded else None)
         self.path: Optional[Path] = None
         self.future: Optional[rclpy.task.Future] = None
         self.goal_handle: Optional[rclpy.action.server.ServerGoalHandle] = None
@@ -35,7 +49,9 @@ class Controller(rclpy.node.Node):  # type: ignore
             'follow_path',
             execute_callback=self.follow_cb,
             goal_callback=self.goal_callback,
-            cancel_callback=self.cancel_cb)
+            cancel_callback=self.cancel_cb,
+            callback_group=rclpy.callback_groups.
+            MutuallyExclusiveCallbackGroup() if self.multithreaded else None)
 
     def shutdown(self) -> None:
         if rclpy.ok():
@@ -63,8 +79,13 @@ class Controller(rclpy.node.Node):  # type: ignore
     def update_control(self, msg: nav_msgs.msg.Odometry) -> None:
         if self.path and self.goal_handle:
             r = self.goal_handle.request
-            position, orientation = self.tf.get_pose_in_frame(
-                msg, self.frame_id)
+            pose = self.tf.get_pose_in_frame(msg, self.frame_id)
+            if not pose:
+                self.get_logger().error(
+                    f"Could not transform odom in {msg.header.frame_id} "
+                    f"to frame {self.frame_id}")
+                return
+            position, orientation = pose
             twist, distance, angular_distance = follow_path(
                 path=self.path,
                 position=position,
@@ -99,22 +120,27 @@ class Controller(rclpy.node.Node):  # type: ignore
 
     async def follow_cb(
             self, goal_handle: rclpy.action.server.ServerGoalHandle) -> bool:
-        self.path = self.tf.get_path_in_frame(goal_handle.request.path,
-                                              self.frame_id,
-                                              goal_handle.request.orientation_interpolation)
+        self.path = self.tf.get_path_in_frame(
+            goal_handle.request.path, self.frame_id,
+            goal_handle.request.orientation_interpolation)
         if not self.path:
-            self.get_logger().warning('Invalid path')
+            self.get_logger().warning(
+                f'Cannot compute valid path in frame {self.frame_id} '
+                f'from goal path {goal_handle.request.path}')
             goal_handle.succeed()
             return navigation_msgs.action.FollowPath.Result(success=False)
-        else:
-            self.get_logger().info('Start following path')
+        self.get_logger().info(f'Start following path in frame {self.frame_id}')
         self.goal_handle = goal_handle
         self.future = rclpy.task.Future()
         success = await self.future
         if goal_handle.is_cancel_requested:
-            goal_handle.cancel()
+            self.get_logger().warning('Action has been cancelled')
+            goal_handle.canceled()
         elif goal_handle.is_active:
+            self.get_logger().info(f'Action has succeed: {success}')
             goal_handle.succeed()
+        else:
+            self.get_logger().error(f'Action no more active')
         self.path = None
         self.goal_handle = None
         self.future = None
@@ -133,9 +159,15 @@ def main(args: Any = None) -> None:
 
     signal.signal(signal.SIGINT, shutdown)
 
+    if node.multithreaded:
+        executor: rclpy.executors.Executor = rclpy.executors.MultiThreadedExecutor()
+    else:
+        executor = rclpy.executors.SingleThreadedExecutor()
+    executor.add_node(node)
+
     try:
         while rclpy.ok():
-            rclpy.spin_once(node, timeout_sec=0.1)
+            executor.spin_once(timeout_sec=0.1)
     except KeyboardInterrupt:
         pass
     except Exception:

@@ -14,6 +14,7 @@ class Client(rclpy.node.Node):  # type: ignore
 
     def __init__(self) -> None:
         super().__init__("client")
+        self.frame_id = self.declare_parameter('frame_id', 'odom').value
         self.follow_client = rclpy.action.ActionClient(
             self, navigation_msgs.action.FollowPath, 'follow_path')
         self.waypoints = [[0.0, 0.0, 0.0],
@@ -27,7 +28,7 @@ class Client(rclpy.node.Node):  # type: ignore
         self.goal_msg.angular_speed = 1.0
         self.goal_msg.angular_goal_tolerance = 0.1
         self.goal_msg.spatial_goal_tolerance = 0.1
-        self.goal_msg.path.header.frame_id = 'odom'
+        self.goal_msg.path.header.frame_id = self.frame_id
         self.goal_msg.turn_ahead = True
 
     def feedback_callback(self, msg) -> None:

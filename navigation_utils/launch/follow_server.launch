@@ -9,6 +9,8 @@
   <!-- In which frame to perform the control. 
   Should be connected to the frame of the path to follow. Include the tf prefix! -->
   <arg name="frame_id" default="odom"/>
+  <!-- Whether to use a multi-threaded executor -->
+  <arg name="multithreaded" default="false"/>
 
   <push-ros-namespace namespace="$(var name)"/>
 
@@ -16,6 +18,7 @@
     <param name="horizon" value="$(var horizon)"/>
     <param name="tau" value="$(var tau)"/>
     <param name="frame_id" value="$(var frame_id)"/>
+    <param name="multithreaded" value="$(var multithreaded)"/>
   </node>
 
 </launch>
