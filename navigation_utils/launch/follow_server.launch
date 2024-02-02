@@ -11,6 +11,10 @@
   <arg name="frame_id" default="odom"/>
   <!-- Whether to use a multi-threaded executor -->
   <arg name="multithreaded" default="false"/>
+  <!-- Whether to use a pose as state source -->
+  <arg name="use_pose" default="true"/>
+  <arg name="pose_topic" default="gt"/>
+
 
   <push-ros-namespace namespace="$(var name)"/>
 
@@ -19,6 +23,8 @@
     <param name="tau" value="$(var tau)"/>
     <param name="frame_id" value="$(var frame_id)"/>
     <param name="multithreaded" value="$(var multithreaded)"/>
+    <param name="use_pose" value="$(var use_pose)"/>
+    <remap from="pose" value="$(var pose_topic)"/>
   </node>
 
 </launch>
