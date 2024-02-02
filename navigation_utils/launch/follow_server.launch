@@ -24,7 +24,7 @@
     <param name="frame_id" value="$(var frame_id)"/>
     <param name="multithreaded" value="$(var multithreaded)"/>
     <param name="use_pose" value="$(var use_pose)"/>
-    <remap from="pose" value="$(var pose_topic)"/>
+    <remap from="pose" to="$(var pose_topic)"/>
   </node>
 
 </launch>

@@ -21,7 +21,7 @@ class Controller(rclpy.node.Node):  # type: ignore
         super().__init__("follow_path_server")
 
         self.frame_id = self.declare_parameter('frame_id', 'odom').value
-        self.use_pose = self.declare_parameter('use_pose', 'true').value
+        self.use_pose = self.declare_parameter('use_pose', True).value
         self.tau = self.declare_parameter('tau', 0.5).value
         self.horizon = self.declare_parameter('horizon', 0.1).value
         self.multithreaded = self.declare_parameter('multithreaded',
@@ -34,7 +34,9 @@ class Controller(rclpy.node.Node):  # type: ignore
         self.tf = TF(self)
         self.cmd_vel_pub = self.create_publisher(geometry_msgs.msg.Twist,
                                                  'cmd_vel', 10)
-
+        self.path: Optional[Path] = None
+        self.future: Optional[rclpy.task.Future] = None
+        self.goal_handle: Optional[rclpy.action.server.ServerGoalHandle] = None
         if self.use_pose:
             self.create_subscription(
                 geometry_msgs.msg.PoseStamped,
@@ -51,9 +53,6 @@ class Controller(rclpy.node.Node):  # type: ignore
                 1,
                 callback_group=rclpy.callback_groups.
                 MutuallyExclusiveCallbackGroup() if self.multithreaded else None)
-        self.path: Optional[Path] = None
-        self.future: Optional[rclpy.task.Future] = None
-        self.goal_handle: Optional[rclpy.action.server.ServerGoalHandle] = None
         self.follow_action_server = rclpy.action.ActionServer(
             self,
             navigation_msgs.action.FollowPath,
@@ -88,7 +87,7 @@ class Controller(rclpy.node.Node):  # type: ignore
         return rclpy.action.CancelResponse.ACCEPT
 
     def update_control(self, msg: geometry_msgs.msg.Pose, frame_id: str) -> None:
-        if self.path and self.goal_handle:
+        if self.path and self.goal_handle and self.future:
             r = self.goal_handle.request
             pose = self.tf.get_pose_in_frame(msg, frame_id, self.frame_id)
             if not pose:
@@ -127,10 +126,10 @@ class Controller(rclpy.node.Node):  # type: ignore
 
     def has_received_odom(self, msg: nav_msgs.msg.Odometry) -> None:
         # self.get_logger().info(f"has_received_odom {msg.pose.pose}")
-        self.update_control(msg.pose.pose, msg.frame_id)
+        self.update_control(msg.pose.pose, msg.header.frame_id)
 
     def has_received_pose(self, msg: geometry_msgs.msg.PoseStamped) -> None:
-        self.update_control(msg.pose, msg.frame_id)
+        self.update_control(msg.pose, msg.header.frame_id)
 
     async def follow_cb(
             self, goal_handle: rclpy.action.server.ServerGoalHandle) -> bool:
@@ -144,8 +143,8 @@ class Controller(rclpy.node.Node):  # type: ignore
             goal_handle.succeed()
             return navigation_msgs.action.FollowPath.Result(success=False)
         self.get_logger().info(f'Start following path in frame {self.frame_id}')
-        self.goal_handle = goal_handle
         self.future = rclpy.task.Future()
+        self.goal_handle = goal_handle
         success = await self.future
         if goal_handle.is_cancel_requested:
             self.get_logger().warning('Action has been cancelled')
@@ -184,7 +183,5 @@ def main(args: Any = None) -> None:
             executor.spin_once(timeout_sec=0.1)
     except KeyboardInterrupt:
         pass
-    except Exception:
-        node.shutdown()
     rclpy.try_shutdown()
     node.destroy_node()
