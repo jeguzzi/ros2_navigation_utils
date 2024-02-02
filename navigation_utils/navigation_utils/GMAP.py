@@ -60,6 +60,20 @@ class GMAP():
 
         return np.array([x, y])
 
+    def isValid(self, p):
+
+        uv = self.world2map(p)
+        tl = self.TopLeft()
+        br = self.BottomRight()
+
+        if uv[0] < br[0] and uv[1] < br[1] and uv[0] > tl[0] and uv[1] > tl[1]:
+            val = self.map[uv[1], uv[0]]
+            #print(val)
+            if val == 0:
+                return True
+
+        return False
+
     def ComputeBorders(self):
         self.map = 255 - cv2.cvtColor(self.map, cv2.COLOR_BGR2GRAY)
         white_pixels = np.array(np.where(self.map == 255))

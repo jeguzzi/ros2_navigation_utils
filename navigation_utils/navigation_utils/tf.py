@@ -100,9 +100,9 @@ class TF:
                     np.asarray(thetas),
                     orientation_interpolation=orientation_interpolation)
 
-    def get_pose_in_frame(self, msg: nav_msgs.msg.Odometry,
+    def get_pose_in_frame(self, msg: geometry_msgs.msg.Pose, source_frame: str,
                           frame: str) -> Optional[Pose]:
-        t = self.get_transform(msg.header.frame_id, frame)
+        t = self.get_transform(source_frame, frame)
         if t is None:
             return None
-        return pose_from_msg(msg.pose.pose, t)
+        return pose_from_msg(msg, t)

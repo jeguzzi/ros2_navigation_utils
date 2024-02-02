@@ -8,17 +8,40 @@
   <arg name="tau" default="0.5"/>
   <!-- In which frame to perform the control. 
   Should be connected to the frame of the path to follow. Include the tf prefix! -->
-  <arg name="frame_id" default="RM0001/odom"/>
+  <arg name="frame_id" default="map"/>
   <!-- Whether to use a multi-threaded executor -->
   <arg name="multithreaded" default="false"/>
 
+   <!-- Whether to use a pose as state source -->
+  <arg name="use_pose" default="true"/>
+  <arg name="pose_topic" default="GT"/>
+
+  <arg name="mapPath" default="/home/nickybones/Code/ros2_ws/data/env1.yaml"/>
+
+
   <push-ros-namespace namespace="$(var name)"/>
+
 
   <node name="follow_path_server" pkg="navigation_utils" exec="follow_path_server" output="screen">
     <param name="horizon" value="$(var horizon)"/>
     <param name="tau" value="$(var tau)"/>
     <param name="frame_id" value="$(var frame_id)"/>
     <param name="multithreaded" value="$(var multithreaded)"/>
+    <param name="use_pose" value="$(var use_pose)"/>
+    <remap from="pose" to="$(var pose_topic)"/>
   </node>
+
+
+  <node pkg="navigation_utils" exec="A2BNavigationNode" name="A2BNavigationNode" output="screen">
+  <param name="mapPath" value="$(var mapPath)"/> 
+   <param name="frame_id" value="$(var frame_id)"/>
+</node>
+
+
+ <node pkg="navigation_utils" exec="GenerateScenario" name="GenerateScenario" output="screen">
+  <param name="mapPath" value="$(var mapPath)"/> 
+   <param name="frame_id" value="$(var frame_id)"/>   
+</node>
+
 
 </launch>
