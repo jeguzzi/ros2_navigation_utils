@@ -11,10 +11,10 @@ import tf2_ros
 from .utils import Path, Pose, Twist
 
 
-def transform_twist(twist: Twist, msg: nav_msgs.msg.Odometry):
+def transform_twist(twist: Twist, msg: geometry_msgs.msg.Pose):
     v = PyKDL.Vector(*twist[0], 0.0)
     w = PyKDL.Vector(0.0, 0.0, twist[1])
-    t = transform_from_odometry_msg(msg).M.Inverse()
+    t = transform_from_pose_msg(msg).M.Inverse()
     v = t * v
     w = t * w
     twist_msg = geometry_msgs.msg.Twist()
@@ -27,10 +27,10 @@ def transform_twist(twist: Twist, msg: nav_msgs.msg.Odometry):
     return twist_msg
 
 
-def transform_from_odometry_msg(msg: nav_msgs.msg.Odometry) -> PyKDL.Frame:
-    position_msg = msg.pose.pose.position
+def transform_from_pose_msg(msg: geometry_msgs.msg.Pose) -> PyKDL.Frame:
+    position_msg = msg.position
     pos = PyKDL.Vector(position_msg.x, position_msg.y, position_msg.z)
-    quaterion_msg = msg.pose.pose.orientation
+    quaterion_msg = msg.orientation
     rot = PyKDL.Rotation.Quaternion(quaterion_msg.x, quaterion_msg.y,
                                     quaterion_msg.z, quaterion_msg.w)
     return PyKDL.Frame(V=pos, R=rot)

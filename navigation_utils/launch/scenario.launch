@@ -1,0 +1,74 @@
+<launch>
+<!-- The namespace -->
+  <arg name="robotA" default="RM0001"/>
+  <arg name="robotB" default="RM0002"/>
+  <!-- How much to look ahead of the current pose -->
+  <arg name="horizon" default="0.1"/>
+  <!-- The relaxation time to converge/track to the path -->
+  <arg name="tau" default="0.5"/>
+  <!-- In which frame to perform the control. 
+  Should be connected to the frame of the path to follow. Include the tf prefix! -->
+  <arg name="frame_id" default="map"/>
+  <!-- Whether to use a multi-threaded executor -->
+  <arg name="multithreaded" default="false"/>
+
+   <!-- Whether to use a pose as state source -->
+  <arg name="use_pose" default="true"/>
+  <arg name="pose_topic" default="GT"/>
+
+  <arg name="mapPath" default="/home/nickybones/Code/ros2_ws/data/env1.yaml"/>
+
+
+<node pkg="navigation_utils" exec="Everything" name="Everything" output="screen">
+  <param name="mapPath" value="$(var mapPath)"/> 
+   <param name="frame_id" value="$(var frame_id)"/>   
+    <param name="robotA" value="$(var robotA)"/>  
+     <param name="robotB" value="$(var robotB)"/>   
+</node>
+
+
+<node pkg="navigation_utils" exec="RecordStuff" name="RecordStuff" output="screen">
+</node>
+
+
+<group>
+<include file="$(find-pkg-share navigation_utils)/launch/follow_server.launch">
+    <arg name="name" value="$(var robotA)"/>
+  </include>
+</group>
+
+<group>
+<include file="$(find-pkg-share navigation_utils)/launch/follow_server.launch">
+    <arg name="name" value="$(var robotB)"/>
+  </include>
+  </group>
+
+<!--
+
+  <push-ros-namespace namespace="$(var robotA)"/>
+
+
+  <node name="follow_path_server" pkg="navigation_utils" exec="follow_path_server" output="screen">
+    <param name="horizon" value="$(var horizon)"/>
+    <param name="tau" value="$(var tau)"/>
+    <param name="frame_id" value="$(var frame_id)"/>
+    <param name="multithreaded" value="$(var multithreaded)"/>
+    <param name="use_pose" value="$(var use_pose)"/>
+    <remap from="pose" to="$(var pose_topic)"/>
+  </node>
+
+   <push-ros-namespace namespace="$(var robotB)"/>
+
+
+  <node name="follow_path_server" pkg="navigation_utils" exec="follow_path_server" output="screen">
+    <param name="horizon" value="$(var horizon)"/>
+    <param name="tau" value="$(var tau)"/>
+    <param name="frame_id" value="$(var frame_id)"/>
+    <param name="multithreaded" value="$(var multithreaded)"/>
+    <param name="use_pose" value="$(var use_pose)"/>
+    <remap from="pose" to="$(var pose_topic)"/>
+  </node>
+
+  -->
+
+</launch>

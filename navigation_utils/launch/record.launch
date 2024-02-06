@@ -1,0 +1,5 @@
+<launch>
+ <node pkg="navigation_utils" exec="RecordStuff" name="RecordStuff" output="screen">
+</node>
+</launch>
+

@@ -1,16 +1,20 @@
 <launch>
 
   <!-- The namespace -->
-  <arg name="name" default="RM0001"/>
+  <arg name="name" default=""/>
   <!-- How much to look ahead of the current pose -->
   <arg name="horizon" default="0.1"/>
   <!-- The relaxation time to converge/track to the path -->
   <arg name="tau" default="0.5"/>
   <!-- In which frame to perform the control. 
   Should be connected to the frame of the path to follow. Include the tf prefix! -->
-  <arg name="frame_id" default="RM0001/odom"/>
+  <arg name="frame_id" default="map"/>
   <!-- Whether to use a multi-threaded executor -->
   <arg name="multithreaded" default="false"/>
+  <!-- Whether to use a pose as state source -->
+  <arg name="use_pose" default="true"/>
+  <arg name="pose_topic" default="gt"/>
+
 
   <push-ros-namespace namespace="$(var name)"/>
 
@@ -19,6 +23,8 @@
     <param name="tau" value="$(var tau)"/>
     <param name="frame_id" value="$(var frame_id)"/>
     <param name="multithreaded" value="$(var multithreaded)"/>
+    <param name="use_pose" value="$(var use_pose)"/>
+    <remap from="pose" to="$(var pose_topic)"/>
   </node>
 
 </launch>

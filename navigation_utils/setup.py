@@ -25,6 +25,12 @@ setup(
             'follow_path_server = navigation_utils.follow_path_no_obstacles:main',
             'test_client = navigation_utils.test_client:main',
             'A2BNavigationNode = navigation_utils.A2BNavigationNode:main',
+            'GenerateScenario = navigation_utils.GenerateScenario:main',
+            'Everything = navigation_utils.Everything:main',
+            'RecordStuff = navigation_utils.RecordStuff:main',
+            'RobotA = navigation_utils.RobotA:main',
+            'RobotB = navigation_utils.RobotB:main',
+
         ],
     },
 )
