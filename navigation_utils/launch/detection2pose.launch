@@ -2,6 +2,8 @@
 
   <!-- The namespace -->
   <arg name="name" default=""/>
+  <arg name="calibration_file" default="$(find-pkg-share robomaster_ros)/config/rm_camera_calibration_720.yaml" description="The camera calibration file"/>
+
   <let name="has_name" value="$(eval 'len(\'$(var name)\') > 0')"/>
   <let name="frame_id" value="$(var name)/base_link" if="$(var has_name)"/>
   <let name="frame_id" value="base_link" unless="$(var has_name)"/>
@@ -10,6 +12,7 @@
     <push-ros-namespace namespace="$(var name)"/>
     <node name="detection2pose" pkg="navigation_utils" exec="detection2pose" output="screen">
       <param name="frame_id" value="$(var frame_id)"/>
+      <param name="calibration_file" value="$(var calibration_file)"/>
     </node>
   </group>
 

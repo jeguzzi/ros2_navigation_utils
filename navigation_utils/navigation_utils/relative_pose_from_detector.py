@@ -1,10 +1,11 @@
-from typing import Any, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple
 
 import PyKDL
 import rclpy
 import rclpy.node
 import robomaster_msgs.msg
 import sensor_msgs.msg
+import yaml
 from geometry_msgs.msg import PointStamped
 from image_geometry import PinholeCameraModel
 
@@ -23,6 +24,21 @@ def project(t: PyKDL.Frame, camera: PinholeCameraModel,
     return o + s * u
 
 
+def camera_info_from_calibration(
+        calibration: Dict[str, Any],
+        frame_id: str = '') -> sensor_msgs.msg.CameraInfo:
+    msg = sensor_msgs.msg.CameraInfo()
+    msg.header.frame_id = frame_id
+    msg.height = calibration['image_height']
+    msg.width = calibration['image_width']
+    msg.distortion_model = calibration['distortion_model']
+    msg.d = calibration['distortion_coefficients']['data']
+    msg.k = calibration['camera_matrix']['data']
+    msg.r = calibration['rectification_matrix']['data']
+    msg.p = calibration['projection_matrix']['data']
+    return msg
+
+
 class Node(rclpy.node.Node):  # type: ignore
 
     def __init__(self) -> None:
@@ -30,9 +46,23 @@ class Node(rclpy.node.Node):  # type: ignore
         self.camera: Optional[PinholeCameraModel] = None
         self.tf = TF(self)
         self.frame_id = self.declare_parameter('frame_id', 'base_link').value
-        self.create_subscription(sensor_msgs.msg.CameraInfo,
-                                 'camera/camera_info',
-                                 self.has_received_camera_info, 1)
+        # A robomaster is about 23 x 29 cm
+        self.robot_size = self.declare_parameter('robot_size', 0.26).value
+        calibration_file = self.declare_parameter("calibration_file", '').value
+        if calibration_file:
+            try:
+                with open(calibration_file, 'r') as f:
+                    calibration = yaml.load(f, yaml.SafeLoader)
+                    if calibration:
+                        msg = camera_info_from_calibration(calibration)
+                        self.has_received_camera_info(msg)
+            except FileNotFoundError:
+                self.logger.warn(
+                    f"Camera calibration file not found at {calibration_file}")
+        if not self.camera:
+            self.create_subscription(sensor_msgs.msg.CameraInfo,
+                                     'camera/camera_info',
+                                     self.has_received_camera_info, 1)
         self.create_subscription(robomaster_msgs.msg.Detection, "vision",
                                  self.has_received_detection, 1)
         self.pub = self.create_publisher(PointStamped, 'robot', 1)
@@ -63,7 +93,11 @@ class Node(rclpy.node.Node):  # type: ignore
         # self.get_logger().info(f"Pixel {pixel}")
         # 2. project it on the floor
         p = project(frame, self.camera, pixel, z=0)
-        # self.get_logger().info(f"Relative position: {p.x()} {p.y()}")
+        # 3. move out by half the robot's size
+        if p.Norm() == 0:
+            return
+        e = p / p.Norm()
+        p = p + e * self.robot_size * 0.5
         out = PointStamped()
         out.header.stamp = msg.header.stamp
         out.header.frame_id = self.frame_id
