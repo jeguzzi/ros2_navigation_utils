@@ -57,7 +57,7 @@ class Node(rclpy.node.Node):  # type: ignore
                         msg = camera_info_from_calibration(calibration)
                         self.has_received_camera_info(msg)
             except FileNotFoundError:
-                self.logger.warn(
+                self.get_logger().warn(
                     f"Camera calibration file not found at {calibration_file}")
         if not self.camera:
             self.create_subscription(sensor_msgs.msg.CameraInfo,

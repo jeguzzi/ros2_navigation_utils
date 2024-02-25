@@ -24,7 +24,7 @@ setup(
         'console_scripts': [
             'follow_path_server = navigation_utils.follow_path_no_obstacles:main',
             'test_client = navigation_utils.test_client:main',
-            'relative = navigation_utils.relative_pose_from_tracker:main',
+            'tracker2pose = navigation_utils.relative_pose_from_tracker:main',
             'detection2pose = navigation_utils.relative_pose_from_detector:main',
         ],
     },
